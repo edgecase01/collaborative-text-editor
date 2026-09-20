@@ -11,6 +11,31 @@ function App() {
                                    : text.trim().split(/\s+/).length;
 
   useEffect(() => {
+    const client = new WebSocket('ws://localhost:3000');
+
+    client.onopen = () => {
+      console.log('Connected');
+      client.send('data from client');
+    }
+
+    client.onerror = (err) => {
+      console.error('WebSocket error : ', err);
+    }
+
+    client.onmessage = (event) => {
+      console.log(`Received : ${event.data}`);
+    };
+
+    client.onclose = () => {
+      console.log('Connection closed');
+    }
+
+    return () => {
+      client.close();
+    }
+  }, []);
+
+  useEffect(() => {
     async function loadDocument(){
       try {
         const res = await fetch("http://localhost:3000/api/document/1");
