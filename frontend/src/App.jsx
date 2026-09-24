@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Header from "./components/Header";
 import Toolbar from "./components/Toolbar";
 import Editor from "./components/Editor";
@@ -10,28 +10,45 @@ function App() {
   const words = text.trim() === "" ? 0
                                    : text.trim().split(/\s+/).length;
 
-  useEffect(() => {
-    const client = new WebSocket('ws://localhost:3000');
+  const socketRef = useRef(null);
 
-    client.onopen = () => {
-      console.log('Connected');
-      client.send('data from client');
+  useEffect(() => {
+    const socket = new WebSocket('ws://localhost:3000');
+    socketRef.current = socket;
+
+    socket.onopen = () => {
+      console.log('Connected to server socket');
+      socket.send(JSON.stringify({
+        "type" : "JOIN_DOCUMENT",
+        "payload" : {
+          "documentId" : 1
+        }
+      }));
     }
 
-    client.onerror = (err) => {
+    socket.onerror = (err) => {
       console.error('WebSocket error : ', err);
     }
 
-    client.onmessage = (event) => {
-      console.log(`Received : ${event.data}`);
+    socket.onmessage = (message) => {
+      try {
+        const parsedData = JSON.parse(message.data);
+        console.log("Server : ", parsedData);
+        if(parsedData.type === "DOCUMENT_UPDATED"){
+          setText(parsedData.payload.content);
+        }
+      } catch(err){
+        console.error("Error : ", err);
+      }
     };
 
-    client.onclose = () => {
+    socket.onclose = () => {
       console.log('Connection closed');
     }
 
     return () => {
-      client.close();
+      socket.close();
+      socketRef.current = null;
     }
   }, []);
 
@@ -93,6 +110,15 @@ function App() {
 
   function handleTextChange(new_text){
     setText(new_text);
+    if(socketRef.current?.readyState === WebSocket.OPEN){
+      socketRef.current?.send(JSON.stringify({
+        "type" : "UPDATE_DOCUMENT",
+        "payload" : {
+          "documentId" : 1,
+          "content" : new_text
+        }
+      }));
+    }
   }
 
   function handleFormat(format){
