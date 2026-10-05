@@ -1,8 +1,9 @@
 import * as roomManager from './roomManager.js';
 import * as documentManager from './documentManager.js';
 
-function handleJoin(ws, payload){
+async function handleJoin(ws, payload){
     roomManager.joinRoom(Number(payload.documentId), ws);
+    await documentManager.getDocument(Number(payload.documentId), ws);
 }
 
 function handleLeave(ws, payload){

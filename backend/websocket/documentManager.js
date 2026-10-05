@@ -1,7 +1,10 @@
 import { getUsersInRoom } from "./roomManager.js";
 import { WebSocket } from "ws";
+import * as documentServices from '../services/documentService.js';
 
-export function updateDocument(ws, documentId, content){
+export async function updateDocument(ws, documentId, content){
+    await documentServices.updateDocument(documentId, content);
+
     const users = getUsersInRoom(documentId);
     if(!users) return;
 
@@ -15,4 +18,22 @@ export function updateDocument(ws, documentId, content){
             }));
         }
     });
+}
+
+export async function getDocument(documentId, ws){
+    try {
+        const doc = await documentServices.getDocument(documentId); 
+        if(ws.readyState === WebSocket.OPEN){
+            ws.send(JSON.stringify({
+                "type" : "JOINED_DOCUMENT",
+                "payload" : {
+                    "documentId" : doc.id,
+                    "title" : doc.title,
+                    "content" : doc.content
+                }
+            }));
+        }
+    } catch(err){
+        console.error(err);
+    }
 }

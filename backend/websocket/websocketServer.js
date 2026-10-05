@@ -20,7 +20,6 @@ export function initWebSocketServer(server) {
         ws.on('message', (raw_data) => {
             try {
                 const data = JSON.parse(raw_data);
-                console.log(data.type);
                 const handler = messageHandler.handlers[data.type];
 
                 if(handler){
