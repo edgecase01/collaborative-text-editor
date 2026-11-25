@@ -1,6 +1,7 @@
 import { WebSocketServer } from 'ws';
 import * as messageHandler from './messageHandler.js';
 import * as roomManager from './roomManager.js';
+import * as documentManager from './documentManager.js';
 
 export function initWebSocketServer(server) {
     const wss = new WebSocketServer({ server });
@@ -13,7 +14,11 @@ export function initWebSocketServer(server) {
         });
 
         ws.on('close', () => {
-            roomManager.leaveRoom(ws.documentId, ws);
+            const docId = ws.documentId;
+            if (docId !== undefined && docId !== null) {
+                roomManager.leaveRoom(docId, ws);
+                documentManager.broadcastPresence(docId);
+            }
             console.log('WebSocket Client Disconnected');
         });
 
@@ -30,7 +35,6 @@ export function initWebSocketServer(server) {
             } catch(err) {
                 console.error(err);
             }
-
         });
     });
 
